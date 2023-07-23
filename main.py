@@ -1,5 +1,22 @@
 from tkinter import *
 from math import dist
+from itertools import combinations
+
+
+def get_line(x1, y1, x2, y2, r1, r2):
+    y = -2*y1+2*y2
+    x = -2*x1+2*x2
+    i = x1*x1+y1*y1-x2*x2-y2*y2
+    r = r1*r1-r2*r2
+    return -x/y, (-i+r)/y
+
+
+def get_intersect(x1, i1, x2, i2):
+    x = x1-x2
+    i = i2-i1
+    x = i/x
+    y = x1*x+i1
+    return x, y
 
 
 class Triangulation:
@@ -73,7 +90,14 @@ class Triangulation:
         self.win.mainloop()
 
     def predict(self):
-        pass
+        # x1, intercept1
+        x1, i1 = get_line(self.points[0][0].get(), self.points[0][1].get(),
+                          self.points[1][0].get(), self.points[1][1].get(),
+                          self.distances[0], self.distances[1])
+        x2, i2 = get_line(self.points[1][0].get(), self.points[1][1].get(),
+                          self.points[2][0].get(), self.points[2][1].get(),
+                          self.distances[1], self.distances[2])
+        return get_intersect(x1, i1, x2, i2)
 
 
     def update(self, event=None):
@@ -81,8 +105,8 @@ class Triangulation:
 
         self.update_distances()
 
-        self.canvas.create_rectangle(self.lx.get() - 2, self.ly.get() - 2, self.lx.get() + 2, self.ly.get() + 2,
-                                     fill="green", outline="green")
+        # self.canvas.create_rectangle(self.lx.get() - 2, self.ly.get() - 2, self.lx.get() + 2, self.ly.get() + 2,
+        #                              fill="green", outline="green")
 
         for t, d in zip(self.points, self.distances):
             x, y = t
@@ -90,6 +114,10 @@ class Triangulation:
             y = y.get()
             self.canvas.create_rectangle(x - 2, y - 2, x + 2, y + 2, fill="red", outline="red")
             self.canvas.create_oval(x - d, y - d, x + d, y + d)
+
+        px, py = self.predict()
+        print(px, py)
+        self.canvas.create_rectangle(px - 2, py - 2, px + 2, py + 2, fill="orange", outline="orange")
 
 
 def main():
