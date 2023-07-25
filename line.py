@@ -2,6 +2,7 @@
 # Most functions would be useless in other cases
 from itertools import combinations
 
+
 class Line:
     def __init__(self, x, i, vertical=False):
         self.x = x
