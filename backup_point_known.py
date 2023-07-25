@@ -3,23 +3,10 @@ from math import dist
 from line import Line
 
 
-def get_line(x1, y1, x2, y2, r1, r2):
-    y = -2*y1+2*y2
-    x = -2*x1+2*x2
-    i = x1*x1+y1*y1-x2*x2-y2*y2
-    r = r1*r1-r2*r2
-    # Division by Zero Error: y cords are the same: Compare
-    # All three the same; two solutions
-    # Basically, a vertical line, but that's hard to represent
-    if y != 0:
-        return Line(-x/y, (-i+r)/y)
-    if x != 0:
-        return Line(0, (-i+r)/x, True)
-    raise Exception("Two Points are on the Exact Same Coordinate")
-
-
 class Triangulation:
     def __init__(self):
+        self.error_text, self.error = None, None
+
         self.win = Tk()
         self.win.geometry("700x800")
 
@@ -58,6 +45,21 @@ class Triangulation:
             dist((self.lx.get(), self.ly.get()), (self.points[2][0].get(), self.points[2][1].get())),
         ]
 
+    def get_line(self, x1, y1, x2, y2, r1, r2):
+        y = -2 * y1 + 2 * y2
+        x = -2 * x1 + 2 * x2
+        i = x1 * x1 + y1 * y1 - x2 * x2 - y2 * y2
+        r = r1 * r1 - r2 * r2
+        # Division by Zero Error: y cords are the same: Compare
+        # All three the same; two solutions
+        # Basically, a vertical line, but that's hard to represent
+        if y != 0:
+            return Line(-x / y, (-i + r) / y)
+        if x != 0:
+            return Line(0, (-i + r) / x, True)
+        self.error_text.set("ERROR: Two Points are on the Exact Same Coordinate")
+        return
+
     def setup(self):
         loop = [
             ("Location X Value", self.lx, "Location Y Value", self.ly),
@@ -77,33 +79,42 @@ class Triangulation:
             s = Scale(self.win, variable=var2, from_=0, to=700, orient=HORIZONTAL, command=self.update)
             s.grid(row=i+1, column=3, sticky="w")
 
+        self.error_text = StringVar()
+        self.error = Label(self.win, textvariable=self.error_text, fg="red", font=("Arial", 18))
+        self.error.grid(row=5, column=0, columnspan=4)
+
 
     def run(self):
         self.win.mainloop()
 
     def predict(self):
         # x1, intercept1
-        l1 = get_line(self.points[0][0].get(), self.points[0][1].get(),
-                      self.points[1][0].get(), self.points[1][1].get(),
-                      self.distances[0], self.distances[1])
-        l2 = get_line(self.points[1][0].get(), self.points[1][1].get(),
-                      self.points[2][0].get(), self.points[2][1].get(),
-                      self.distances[1], self.distances[2])
+        l1 = self.get_line(self.points[0][0].get(), self.points[0][1].get(),
+                           self.points[1][0].get(), self.points[1][1].get(),
+                           self.distances[0], self.distances[1])
+        l2 = self.get_line(self.points[1][0].get(), self.points[1][1].get(),
+                           self.points[2][0].get(), self.points[2][1].get(),
+                           self.distances[1], self.distances[2])
         # We only technically need 2 lines, but 3 lines provide some protection
-        l3 = get_line(self.points[0][0].get(), self.points[0][1].get(),
-                      self.points[2][0].get(), self.points[2][1].get(),
-                      self.distances[0], self.distances[2])
+        l3 = self.get_line(self.points[0][0].get(), self.points[0][1].get(),
+                           self.points[2][0].get(), self.points[2][1].get(),
+                           self.distances[0], self.distances[2])
         # Uncomment for visual indication of what is happening
         self.visualize(l1, l2, l3)
-        return l1.get_intersect(l2, l3)
 
-    def visualize(self, l1, l2, l3):
-        l1.draw(self.canvas)
-        l2.draw(self.canvas)
-        l3.draw(self.canvas)
+        if self.error_text.get() != "":
+            return
+
+        return l1.get_intersect(l2, l3, self)
+
+    def visualize(self, *args):
+        for l in args:
+            if l:
+                l.draw(self.canvas)
 
     def update(self, event=None):
         self.canvas.delete('all')
+        self.error_text.set("")
 
         self.update_distances()
 
@@ -114,11 +125,16 @@ class Triangulation:
             self.canvas.create_rectangle(x - 2, y - 2, x + 2, y + 2, fill="red", outline="red")
             self.canvas.create_oval(x - d, y - d, x + d, y + d)
 
-        px, py = self.predict()
-        self.canvas.create_rectangle(px - 4, py - 4, px + 4, py + 4, fill="orange", outline="orange")
+        try:
+            px, py = self.predict()
+        except TypeError:  # There was an error in predicting so None was returned
+            pass
+        else:
+            self.canvas.create_rectangle(px - 4, py - 4, px + 4, py + 4, fill="orange", outline="orange")
 
         self.canvas.create_rectangle(self.lx.get() - 2, self.ly.get() - 2, self.lx.get() + 2, self.ly.get() + 2,
                                      fill="green", outline="green")
+
 
 
 def main():

@@ -1,6 +1,7 @@
 # Line Class, made specifically for trilateration
 # Most functions would be useless in other cases
 from itertools import combinations
+
 class Line:
     def __init__(self, x, i, vertical=False):
         self.x = x
@@ -16,7 +17,7 @@ class Line:
 
     # Takes two lines and finds where they intersect
     # After getting two lines from get_line, this finds where they intersect and therefore where the circles intersect
-    def get_intersect(self, other_line1, other_line2):
+    def get_intersect(self, other_line1, other_line2, tri):
         # 3 lines given, finds the intersect of two that don't error
         for t in combinations([self, other_line1, other_line2], 2):
             if t[0].vertical and t[1].vertical: # Parallel Lines
@@ -36,5 +37,6 @@ class Line:
             else:
                 y = x1 * x + i1
                 return x, y
-        raise Exception("All Lines are Parallel")
+        tri.error_text.set("ERROR: All Lines are Parallel")
+        return
 
